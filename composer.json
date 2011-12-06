@@ -1,0 +1,31 @@
+{
+    "name": "doctrine/spatial",
+    "type": "library",
+    "authors": [
+        {"name": "Jan Sorgalla", "email": "jan@googlemail.com"}
+    ],
+    "repositories": {
+        "jsor@github.com": {
+            "package": {
+                "name": "jsor/dbal",
+                "source": {
+                    "url": "https://github.com/jsor/dbal.git",
+                    "type": "git",
+                    "reference": "origin/custom_schema_handler"
+                }
+            }
+        }
+    },
+    "require": {
+        "php": ">=5.3.2",
+        "ext-pdo": "*",
+        "symfony/console": "2.1.0-dev",
+        "symfony/class-loader": "2.1.0-dev",
+        "doctrine/common": "master-dev",
+        "jsor/dbal": "*",
+        "doctrine/orm": "master-dev"
+    },
+    "autoload": {
+        "psr-0": { "Doctrine\\Spatial": "src/" }
+    }
+}
