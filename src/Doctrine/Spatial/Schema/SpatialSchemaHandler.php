@@ -14,7 +14,10 @@ namespace Doctrine\Spatial\Schema;
 use Doctrine\DBAL\Schema\CustomSchemaHandler;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Schema\Column;
+use Doctrine\DBAL\Schema\ColumnDiff;
 use Doctrine\DBAL\Schema\Table;
+use Doctrine\DBAL\Schema\TableDiff;
 
 /**
  * @author  Jan Sorgalla <jsorgalla@googlemail.com>
@@ -94,34 +97,7 @@ class SpatialSchemaHandler implements CustomSchemaHandler
         switch ($platform->getName()) {
             case 'postgresql':
                 foreach ($table->getColumns() as $column) {
-                    $type = $column->getType()->getName();
-                    switch (strtolower($type)) {
-                        case 'point':
-                        case 'linestring':
-                        case 'polygon':
-                        case 'multipoint':
-                        case 'multilinestring':
-                        case 'multipolygon':
-                        case 'geometrycollection':
-                            // Geometry columns are created by AddGeometryColumn stored procedure
-                            $query[] = sprintf(
-                                "SELECT AddGeometryColumn('%s', '%s', %d, '%s', %d)",
-                                strtolower($table->getQuotedName($platform)), // Table name
-                                $column->getQuotedName($platform), // Column name
-                                -1, // SRID
-                                strtoupper($type), // Geometry type
-                                2 // Dimension
-                            );
-                            
-                            if ($column->getNotnull()) {
-                                // Add a NOT NULL constraint to the field
-                                $query[] = sprintf(
-                                    "ALTER TABLE %s ALTER %s SET NOT NULL",
-                                    strtolower($table->getQuotedName($platform)), // Table name
-                                    $column->getQuotedName($platform) // Column name
-                                );
-                            }
-                    }
+                    $query = array_merge($query, $this->getPostgresAddColumnSQL($table->getQuotedName($platform), $column->getQuotedName($platform), $column->getType()->getName()));
                 }
                 break;
             default:
@@ -138,22 +114,7 @@ class SpatialSchemaHandler implements CustomSchemaHandler
             // We us DropGeometryColumn() to also drop entries from the geometry_columns table
             case 'postgresql':
                 foreach ($table->getColumns() as $column) {
-                    $type = $column->getType()->getName();
-                    switch (strtolower($type)) {
-                        case 'point':
-                        case 'linestring':
-                        case 'polygon':
-                        case 'multipoint':
-                        case 'multilinestring':
-                        case 'multipolygon':
-                        case 'geometrycollection':
-                            $query[] = sprintf(
-                                "SELECT DropGeometryColumn ('%s', '%s')",
-                                strtolower($table->getQuotedName($platform)), // Table name
-                                $column->getQuotedName($platform) // Column name
-                            );
-                            break;
-                    }
+                    $query = array_merge($query, $this->getPostgresDropColumnSQL($table->getQuotedName($platform), $column->getQuotedName($platform), $column->getType()->getName()));
                 }
                 break;
             default:
@@ -161,5 +122,106 @@ class SpatialSchemaHandler implements CustomSchemaHandler
         }
         
         return $query;
+    }
+
+    public function getAddedColumnAlterTableSQL(TableDiff $diff, Column $column, AbstractPlatform $platform)
+    {
+        $type = $column->getType()->getName();
+        switch (strtolower($type)) {
+            case 'point':
+            case 'linestring':
+            case 'polygon':
+            case 'multipoint':
+            case 'multilinestring':
+            case 'multipolygon':
+            case 'geometrycollection':
+                return null; // Columns will added later in getAlterTableSQL() after the table is renamed
+            default:
+                return false;
+        }
+    }
+
+    public function getRemovedColumnAlterTableSQL(TableDiff $diff, Column $column, AbstractPlatform $platform)
+    {
+        return $this->getPostgresDropColumnSQL($table->getQuotedName($platform), $column->getQuotedName($platform), $column->getType()->getName());
+    }
+
+    public function getChangedColumnAlterTableSQL(TableDiff $diff, ColumnDiff $columnDiff, AbstractPlatform $platform)
+    {
+        // @TODO: Check how changing is possible
+
+        // Columns can't be changed, they always have to be dropped and added
+        $column = $columnDiff->column;
+        return $this->getPostgresDropColumnSQL($table->getQuotedName($platform), $column->getQuotedName($platform), $column->getType()->getName());
+    }
+    
+    public function getRenamedColumnAlterTableSQL(TableDiff $diff, $oldColumnNamem, Column $column, AbstractPlatform $platform)
+    {
+        // Columns can't be rename, they always have to be dropped and added
+        return $this->getPostgresDropColumnSQL($table->getQuotedName($platform), $column->getQuotedName($platform), $column->getType()->getName());
+    }
+
+    public function getAlterTableSQL(TableDiff $diff, AbstractPlatform $platform)
+    {
+        $query = array();
+
+        foreach ($diff->changedColumns as $oldColumnName => $column) {
+            // @TODO
+        }
+
+        foreach ($diff->renamedColumns as $oldColumnName => $column) {
+            // @TODO
+        }
+        
+        return $query;
+    }
+    
+    protected function getPostgresAddColumnSQL($tableName, $columnName, $type)
+    {
+        switch (strtolower($type)) {
+            case 'point':
+            case 'linestring':
+            case 'polygon':
+            case 'multipoint':
+            case 'multilinestring':
+            case 'multipolygon':
+            case 'geometrycollection':
+                // Geometry columns are created by AddGeometryColumn stored procedure
+                $query[] = sprintf(
+                    "SELECT AddGeometryColumn('%s', '%s', %d, '%s', %d)",
+                    $tableName, // Table name
+                    $columnName, // Column name
+                    -1, // SRID
+                    strtoupper($type), // Geometry type
+                    2 // Dimension
+                );
+
+                if ($column->getNotnull()) {
+                    // Add a NOT NULL constraint to the field
+                    $query[] = sprintf(
+                        "ALTER TABLE %s ALTER %s SET NOT NULL",
+                        $tableName, // Table name
+                        $columnName // Column name
+                    );
+                }
+        }
+    }
+    
+    protected function getPostgresDropColumnSQL($tableName, $columnName, $type)
+    {
+        switch (strtolower($type)) {
+            case 'point':
+            case 'linestring':
+            case 'polygon':
+            case 'multipoint':
+            case 'multilinestring':
+            case 'multipolygon':
+            case 'geometrycollection':
+                $query[] = sprintf(
+                    "SELECT DropGeometryColumn ('%s', '%s')",
+                    $tableName, // Table name
+                    $columnName // Column name
+                );
+        }
     }
 }

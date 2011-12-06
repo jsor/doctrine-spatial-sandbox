@@ -12,6 +12,11 @@ class Geo
      * @GeneratedValue
      */
     private $id;
+    
+    /**
+     * @Column(type="point", nullable=true)
+     */
+    private $point;
 
     /**
      * @Column(type="linestring", nullable=true)
