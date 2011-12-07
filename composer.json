@@ -11,7 +11,7 @@
                 "source": {
                     "url": "https://github.com/jsor/dbal.git",
                     "type": "git",
-                    "reference": "origin/custom_schema_handler"
+                    "reference": "origin/schema_events"
                 }
             }
         },
@@ -21,7 +21,7 @@
                 "source": {
                     "url": "https://github.com/jsor/doctrine2.git",
                     "type": "git",
-                    "reference": "origin/custom_schema_handler"
+                    "reference": "origin/schema_events"
                 }
             }
         }
