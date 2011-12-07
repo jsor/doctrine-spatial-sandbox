@@ -5,11 +5,21 @@
         {"name": "Jan Sorgalla", "email": "jan@googlemail.com"}
     ],
     "repositories": {
-        "jsor@github.com": {
+        "github.com/jsor/dbal": {
             "package": {
                 "name": "jsor/dbal",
                 "source": {
                     "url": "https://github.com/jsor/dbal.git",
+                    "type": "git",
+                    "reference": "origin/custom_schema_handler"
+                }
+            }
+        },
+        "github.com/jsor/doctrine2": {
+            "package": {
+                "name": "jsor/doctrine2",
+                "source": {
+                    "url": "https://github.com/jsor/doctrine2.git",
                     "type": "git",
                     "reference": "origin/custom_schema_handler"
                 }
@@ -23,7 +33,7 @@
         "symfony/class-loader": "2.1.0-dev",
         "doctrine/common": "master-dev",
         "jsor/dbal": "*",
-        "doctrine/orm": "master-dev"
+        "jsor/doctrine2": "*"
     },
     "autoload": {
         "psr-0": { "Doctrine\\Spatial": "src/" }
