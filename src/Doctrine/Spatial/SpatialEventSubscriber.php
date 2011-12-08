@@ -24,6 +24,10 @@ use Doctrine\DBAL\Events;
 use Doctrine\DBAL\Event\SchemaCreateTableColumnEventArgs;
 use Doctrine\DBAL\Event\SchemaDropTableEventArgs;
 use Doctrine\DBAL\Event\SchemaColumnDefinitionEventArgs;
+use Doctrine\DBAL\Event\SchemaAlterTableAddedColumnEventArgs;
+use Doctrine\DBAL\Event\SchemaAlterTableRemovedColumnEventArgs;
+use Doctrine\DBAL\Event\SchemaAlterTableChangedColumnEventArgs;
+use Doctrine\DBAL\Event\SchemaAlterTableRenamedColumnEventArgs;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\Spatial\Schema\SpatialColumn;
 
@@ -40,7 +44,11 @@ class SpatialEventSubscriber implements EventSubscriber
         return array(
             Events::onSchemaCreateTableColumn,
             Events::onSchemaDropTable,
-            Events::onSchemaColumnDefinition
+            Events::onSchemaColumnDefinition,
+            Events::onSchemaAlterTableAddedColumn,
+            Events::onSchemaAlterTableRemovedColumn,
+            Events::onSchemaAlterTableChangedColumn,
+            Events::onSchemaAlterTableRenamedColumn
         );
     }
 
@@ -95,6 +103,150 @@ class SpatialEventSubscriber implements EventSubscriber
                 $args
                     ->preventDefault()
                     ->setSql("SELECT DropGeometryTable('" . $table . "')");
+                break;
+        }
+    }
+
+    /**
+     * @param SchemaAlterTableAddedColumnEventArgs $args
+     * @return void
+     */
+    public function onSchemaAlterTableAddedColumn(SchemaAlterTableAddedColumnEventArgs $args)
+    {
+        $column = $args->getColumn();
+
+        if (!$this->isGeometryColumn($column->getType()->getName())) {
+            return;
+        }
+
+        $platform = $args->getPlatform();
+
+        switch ($platform->getName()) {
+            case 'postgresql':
+                $diff = $args->getTableDiff();
+                $tableName = $diff->newName !== false ? $diff->newName : $diff->name;;
+                $args
+                    ->preventDefault()
+                    ->addSql(
+                        $this->getPostgresqlAddColumnSQL(
+                            $tableName,
+                            $column->getQuotedName($platform),
+                            $column->getType()->getName(),
+                            $column->getNotnull()
+                        )
+                    );
+                break;
+        }
+    }
+
+    /**
+     * @param SchemaAlterTableRemovedColumnEventArgs $args
+     * @return void
+     */
+    public function onSchemaAlterTableRemovedColumn(SchemaAlterTableRemovedColumnEventArgs $args)
+    {
+        $column = $args->getColumn();
+
+        if (!$this->isGeometryColumn($column->getType()->getName())) {
+            return;
+        }
+
+        $platform = $args->getPlatform();
+
+        switch ($platform->getName()) {
+            case 'postgresql':
+                $diff = $args->getTableDiff();
+                $tableName = $diff->newName !== false ? $diff->newName : $diff->name;;
+                $args
+                    ->preventDefault()
+                    ->addSql(
+                        $this->getPostgresqlDropColumnSQL(
+                            $tableName,
+                            $column->getQuotedName($platform),
+                            $column->getNotnull()
+                        )
+                    );
+                break;
+        }
+    }
+
+    /**
+     * @param SchemaAlterTableChangedColumnEventArgs $args
+     * @return void
+     */
+    public function onSchemaAlterTableChangedColumn(SchemaAlterTableChangedColumnEventArgs $args)
+    {
+        // @TODO: Make granular change detection (eg. if only SRID has changed)
+
+        $columnDiff = $args->getColumnDiff();
+        $column = $columnDiff->column;
+
+        if (!$this->isGeometryColumn($column->getType()->getName())) {
+            return;
+        }
+
+        $platform = $args->getPlatform();
+
+        switch ($platform->getName()) {
+            case 'postgresql':
+                $diff = $args->getTableDiff();
+                $tableName = $diff->newName !== false ? $diff->newName : $diff->name;;
+                $args
+                    ->preventDefault()
+                    ->addSql(
+                        $this->getPostgresqlDropColumnSQL(
+                            $tableName,
+                            $columnDiff->oldColumnName,
+                            $column->getNotnull()
+                        )
+                    )
+                    ->addSql(
+                        $this->getPostgresqlAddColumnSQL(
+                            $tableName,
+                            $column->getQuotedName($platform),
+                            $column->getType()->getName(),
+                            $column->getNotnull()
+                        )
+                    );
+                break;
+        }
+    }
+
+    /**
+     * @param SchemaAlterTableRenamedColumnEventArgs $args
+     * @return void
+     */
+    public function onSchemaAlterTableRenamedColumn(SchemaAlterTableRenamedColumnEventArgs $args)
+    {
+        $column = $args->getColumn();
+
+        if (!$this->isGeometryColumn($column->getType()->getName())) {
+            return;
+        }
+
+        $platform = $args->getPlatform();
+
+        switch ($platform->getName()) {
+            case 'postgresql':
+                $diff = $args->getTableDiff();
+                $tableName = $diff->newName !== false ? $diff->newName : $diff->name;;
+                $args
+                    ->preventDefault()
+                    ->addSql(
+                        $this->getPostgresqlDropColumnSQL(
+                            $tableName,
+                            $args->getOldColumnName(),
+                            $column->getNotnull()
+                        )
+                    )
+                    ->addSql(
+                        $this->getPostgresqlAddColumnSQL(
+                            $tableName,
+                            $column->getQuotedName($platform),
+                            $column->getType()->getName(),
+                            $column->getNotnull()
+                        )
+                    );
                 break;
         }
     }
@@ -196,7 +348,7 @@ class SpatialEventSubscriber implements EventSubscriber
         return $query;
     }
 
-    protected function getPostgresqlDropColumnSQL($tableName, $columnName, $type, $notnull)
+    protected function getPostgresqlDropColumnSQL($tableName, $columnName, $notnull)
     {
         $query = array();
         
