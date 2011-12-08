@@ -4,6 +4,7 @@ namespace Entities;
 
 /**
  * @Entity
+ * @Table(name="geo")
  */
 class Geo
 {
