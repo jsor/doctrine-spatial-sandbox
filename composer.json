@@ -14,16 +14,6 @@
                     "reference": "origin/schema_events"
                 }
             }
-        },
-        "github.com/jsor/doctrine2": {
-            "package": {
-                "name": "jsor/doctrine2",
-                "source": {
-                    "url": "https://github.com/jsor/doctrine2.git",
-                    "type": "git",
-                    "reference": "origin/schema_events"
-                }
-            }
         }
     },
     "require": {
@@ -32,8 +22,8 @@
         "symfony/console": "2.1.0-dev",
         "symfony/class-loader": "2.1.0-dev",
         "doctrine/common": "master-dev",
-        "jsor/dbal": "*",
-        "jsor/doctrine2": "*"
+        "doctrine/orm": "master-dev",
+        "jsor/dbal": "*"
     },
     "autoload": {
         "psr-0": { "Doctrine\\Spatial": "src/" }

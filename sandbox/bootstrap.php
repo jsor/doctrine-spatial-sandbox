@@ -51,4 +51,5 @@ $conn->getDatabasePlatform()->registerDoctrineTypeMapping('multilinestring', 'mu
 $conn->getDatabasePlatform()->registerDoctrineTypeMapping('multipolygon', 'multipolygon');
 $conn->getDatabasePlatform()->registerDoctrineTypeMapping('geometrycollection', 'geometrycollection');
 
-$conn->getEventManager()->addEventSubscriber(new \Doctrine\Spatial\SpatialEventSubscriber());
+$conn->getEventManager()->addEventSubscriber(new \Doctrine\Spatial\SpatialDBALEventSubscriber());
+$conn->getEventManager()->addEventSubscriber(new \Doctrine\Spatial\SpatialORMEventSubscriber());
