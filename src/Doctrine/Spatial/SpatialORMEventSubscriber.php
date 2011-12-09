@@ -31,12 +31,13 @@ use Doctrine\ORM\Tools\Event\GenerateSchemaTableEventArgs;
  * @author  Jan Sorgalla <jsorgalla@googlemail.com>
  * @version @package_version@>
  */
-class SpatialORMEventSubscriber implements EventSubscriber
+class SpatialORMEventSubscriber extends SpatialDBALEventSubscriber
 {
     public function getSubscribedEvents()
     {
-        return array(
-            ToolEvents::postGenerateSchemaTable
+        return array_merge(
+            parent::getSubscribedEvents(),
+            array(ToolEvents::postGenerateSchemaTable)
         );
     }
 
@@ -49,7 +50,7 @@ class SpatialORMEventSubscriber implements EventSubscriber
         $table = $args->getClassTable();
 
         foreach ($table->getColumns() as $column) {
-            if (!$this->isGeometryColumn($column)) {
+            if (!$this->isGeometryColumn($column->getType()->getName())) {
                 continue;
             }
 
@@ -78,22 +79,6 @@ class SpatialORMEventSubscriber implements EventSubscriber
             );
 
             $table->changeColumn($column->getName(), $options);
-        }
-    }
-
-    protected function isGeometryColumn(Column $column)
-    {
-        switch (strtolower($column->getType()->getName())) {
-            case 'point':
-            case 'linestring':
-            case 'polygon':
-            case 'multipoint':
-            case 'multilinestring':
-            case 'multipolygon':
-            case 'geometrycollection':
-                return true;
-            default:
-                return false;
         }
     }
 }
