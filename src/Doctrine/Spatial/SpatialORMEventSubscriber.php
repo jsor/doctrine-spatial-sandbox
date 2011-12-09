@@ -20,10 +20,10 @@
 namespace Doctrine\Spatial;
 
 use Doctrine\Common\EventSubscriber;
-use Doctrine\ORM\Tools\ToolEvents;
-use Doctrine\ORM\Tools\Event\GenerateSchemaTableEventArgs;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Schema\Column;
+use Doctrine\ORM\Tools\ToolEvents;
+use Doctrine\ORM\Tools\Event\GenerateSchemaTableEventArgs;
 
 /**
  * ORM event subscriber enabling spatial data support.
