@@ -13,7 +13,7 @@ class Geo
      * @GeneratedValue
      */
     private $id;
-    
+
     /**
      * @Column(type="point", nullable=true)
      */

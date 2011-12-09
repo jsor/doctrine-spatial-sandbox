@@ -24,10 +24,10 @@ use Doctrine\DBAL\Events;
 use Doctrine\DBAL\Event\SchemaCreateTableColumnEventArgs;
 use Doctrine\DBAL\Event\SchemaDropTableEventArgs;
 use Doctrine\DBAL\Event\SchemaColumnDefinitionEventArgs;
-use Doctrine\DBAL\Event\SchemaAlterTableAddedColumnEventArgs;
-use Doctrine\DBAL\Event\SchemaAlterTableRemovedColumnEventArgs;
-use Doctrine\DBAL\Event\SchemaAlterTableChangedColumnEventArgs;
-use Doctrine\DBAL\Event\SchemaAlterTableRenamedColumnEventArgs;
+use Doctrine\DBAL\Event\SchemaAlterTableAddColumnEventArgs;
+use Doctrine\DBAL\Event\SchemaAlterTableRemoveColumnEventArgs;
+use Doctrine\DBAL\Event\SchemaAlterTableChangeColumnEventArgs;
+use Doctrine\DBAL\Event\SchemaAlterTableRenameColumnEventArgs;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\Spatial\Schema\SpatialColumn;
 
@@ -45,10 +45,10 @@ class SpatialEventSubscriber implements EventSubscriber
             Events::onSchemaCreateTableColumn,
             Events::onSchemaDropTable,
             Events::onSchemaColumnDefinition,
-            Events::onSchemaAlterTableAddedColumn,
-            Events::onSchemaAlterTableRemovedColumn,
-            Events::onSchemaAlterTableChangedColumn,
-            Events::onSchemaAlterTableRenamedColumn
+            Events::onSchemaAlterTableAddColumn,
+            Events::onSchemaAlterTableRemoveColumn,
+            Events::onSchemaAlterTableChangeColumn,
+            Events::onSchemaAlterTableRenameColumn
         );
     }
 
@@ -108,10 +108,10 @@ class SpatialEventSubscriber implements EventSubscriber
     }
 
     /**
-     * @param SchemaAlterTableAddedColumnEventArgs $args
+     * @param SchemaAlterTableAddColumnEventArgs $args
      * @return void
      */
-    public function onSchemaAlterTableAddedColumn(SchemaAlterTableAddedColumnEventArgs $args)
+    public function onSchemaAlterTableAddColumn(SchemaAlterTableAddColumnEventArgs $args)
     {
         $column = $args->getColumn();
 
@@ -140,10 +140,10 @@ class SpatialEventSubscriber implements EventSubscriber
     }
 
     /**
-     * @param SchemaAlterTableRemovedColumnEventArgs $args
+     * @param SchemaAlterTableRemoveColumnEventArgs $args
      * @return void
      */
-    public function onSchemaAlterTableRemovedColumn(SchemaAlterTableRemovedColumnEventArgs $args)
+    public function onSchemaAlterTableRemoveColumn(SchemaAlterTableRemoveColumnEventArgs $args)
     {
         $column = $args->getColumn();
 
@@ -171,10 +171,10 @@ class SpatialEventSubscriber implements EventSubscriber
     }
 
     /**
-     * @param SchemaAlterTableChangedColumnEventArgs $args
+     * @param SchemaAlterTableChangeColumnEventArgs $args
      * @return void
      */
-    public function onSchemaAlterTableChangedColumn(SchemaAlterTableChangedColumnEventArgs $args)
+    public function onSchemaAlterTableChangeColumn(SchemaAlterTableChangeColumnEventArgs $args)
     {
         // @TODO: Make granular change detection (eg. if only SRID has changed)
 
@@ -213,10 +213,10 @@ class SpatialEventSubscriber implements EventSubscriber
     }
 
     /**
-     * @param SchemaAlterTableRenamedColumnEventArgs $args
+     * @param SchemaAlterTableRenameColumnEventArgs $args
      * @return void
      */
-    public function onSchemaAlterTableRenamedColumn(SchemaAlterTableRenamedColumnEventArgs $args)
+    public function onSchemaAlterTableRenameColumn(SchemaAlterTableRenameColumnEventArgs $args)
     {
         $column = $args->getColumn();
 
