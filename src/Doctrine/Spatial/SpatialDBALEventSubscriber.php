@@ -29,15 +29,15 @@ use Doctrine\DBAL\Event\SchemaAlterTableRemoveColumnEventArgs;
 use Doctrine\DBAL\Event\SchemaAlterTableChangeColumnEventArgs;
 use Doctrine\DBAL\Event\SchemaAlterTableRenameColumnEventArgs;
 use Doctrine\DBAL\Types\Type;
-use Doctrine\Spatial\Schema\SpatialColumn;
+use Doctrine\DBAL\Schema\Column;
 
 /**
- * Event subscriber enabling spatial data support.
+ * DBAL event subscriber enabling spatial data support.
  *
  * @author  Jan Sorgalla <jsorgalla@googlemail.com>
  * @version @package_version@>
  */
-class SpatialEventSubscriber implements EventSubscriber
+class SpatialDBALEventSubscriber implements EventSubscriber
 {
     public function getSubscribedEvents()
     {
@@ -74,8 +74,7 @@ class SpatialEventSubscriber implements EventSubscriber
                         $this->getPostgresqlAddColumnSQL(
                             $args->getTable()->getQuotedName($platform),
                             $column->getQuotedName($platform),
-                            $column->getType()->getName(),
-                            $column->getNotnull()
+                            $column
                         )
                     );
                 break;
@@ -131,8 +130,7 @@ class SpatialEventSubscriber implements EventSubscriber
                         $this->getPostgresqlAddColumnSQL(
                             $tableName,
                             $column->getQuotedName($platform),
-                            $column->getType()->getName(),
-                            $column->getNotnull()
+                            $column
                         )
                     );
                 break;
@@ -243,8 +241,7 @@ class SpatialEventSubscriber implements EventSubscriber
                         $this->getPostgresqlAddColumnSQL(
                             $tableName,
                             $column->getQuotedName($platform),
-                            $column->getType()->getName(),
-                            $column->getNotnull()
+                            $column
                         )
                     );
                 break;
@@ -266,44 +263,53 @@ class SpatialEventSubscriber implements EventSubscriber
 
     protected function setPostgresqlSchemaColumnDefinition(SchemaColumnDefinitionEventArgs $args)
     {
-        $table  = $args->getTable();
-        $column = $args->getColumn();
-        $conn   = $args->getConnection();
+        $tableColumn = $args->getTableColumn();
+        $table       = $args->getTable();
+        $conn        = $args->getConnection();
 
-        $column = array_change_key_case($column, CASE_LOWER);
+        $tableColumn = array_change_key_case($tableColumn, CASE_LOWER);
 
-        if ($column['type'] !== 'geometry') {
+        if ($tableColumn['type'] !== 'geometry') {
             return;
         }
 
         $sql = 'SELECT coord_dimension, srid, type FROM geometry_columns WHERE f_table_name = ? AND f_geometry_column = ?';
         $stmt = $conn->prepare($sql);
-        $stmt->execute(array($table, $column['field']));
+        $stmt->execute(array($table, $tableColumn['field']));
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         $type = strtolower($row['type']);
 
+        if (!isset($tableColumn['platformoptions'])) {
+            $tableColumn['platformoptions'] = array();
+        }
+        
+        $srid      = (int) $row['srid'];
+        $dimension = (int) $row['coord_dimension'];
+
         $options = array(
             'length'          => null,
-            'notnull'         => (bool) $column['isnotnull'],
-            'default'         => $column['default'],
-            'primary'         => (bool) ($column['pri'] == 't'),
+            'notnull'         => (bool) $tableColumn['isnotnull'],
+            'default'         => $tableColumn['default'],
+            'primary'         => (bool) ($tableColumn['pri'] == 't'),
             'precision'       => null,
             'scale'           => null,
             'fixed'           => null,
             'unsigned'        => false,
             'autoincrement'   => false,
-            'comment'         => $column['comment'],
-            'platformOptions' => isset($column['platformoptions']) ? (array) $column['platformoptions'] : array(),
-            'spatialOptions'  => array(
-                'srid'            => (int) $row['srid'],
-                'coord_dimension' => (int) $row['coord_dimension'],
+            'comment'         => $tableColumn['comment'],
+            'platformOptions' => array_merge(
+                (array) $tableColumn['platformoptions'],
+                array(
+                    'spatial_srid'      => $srid,
+                    'spatial_dimension' => $dimension
+                )
             )
         );
 
         $args
             ->preventDefault()
-            ->setColumnDefinition(new SpatialColumn($column['field'], Type::getType($type), $options));
+            ->setColumn(new Column($tableColumn['field'], Type::getType($type), $options));
     }
 
     protected function isGeometryColumn($type)
@@ -322,21 +328,33 @@ class SpatialEventSubscriber implements EventSubscriber
         }
     }
 
-    protected function getPostgresqlAddColumnSQL($tableName, $columnName, $type, $notnull)
+    protected function getPostgresqlAddColumnSQL($tableName, $columnName, Column $column)
     {
         $query = array();
+
+        if ($column->hasPlatformOption('spatial_srid')) {
+            $srid = $column->getPlatformOption('spatial_srid');
+        } else {
+            $srid = -1;
+        }
+
+        if ($column->hasPlatformOption('spatial_dimension')) {
+            $dimension = $column->getPlatformOption('spatial_dimension');
+        } else {
+            $dimension = 2;
+        }
 
         // Geometry columns are created by AddGeometryColumn stored procedure
         $query[] = sprintf(
             "SELECT AddGeometryColumn('%s', '%s', %d, '%s', %d)",
             $tableName, // Table name
             $columnName, // Column name
-            -1, // SRID
-            strtoupper($type), // Geometry type
-            2 // Dimension
+            $srid, // SRID
+            strtoupper($column->getType()->getName()), // Geometry type
+            $dimension // Dimension
         );
 
-        if ($notnull) {
+        if ($column->getNotnull()) {
             // Add a NOT NULL constraint to the field
             $query[] = sprintf(
                 "ALTER TABLE %s ALTER %s SET NOT NULL",
