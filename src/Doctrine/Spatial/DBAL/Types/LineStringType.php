@@ -9,16 +9,16 @@
  * file that was distributed with this source code.
  */
 
-namespace Doctrine\Spatial\Types;
+namespace Doctrine\Spatial\DBAL\Types;
 
 /**
  * @author  Jan Sorgalla <jsorgalla@googlemail.com>
  * @version @package_version@
  */
-class MultiLineStringType extends Type
+class LineStringType extends Type
 {
     public function getName()
     {
-        return Type::MULTILINESTRING;
+        return Type::LINESTRING;
     }
 }

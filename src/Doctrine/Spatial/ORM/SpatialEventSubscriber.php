@@ -17,8 +17,9 @@
  * <http://www.doctrine-project.org>.
 */
 
-namespace Doctrine\Spatial;
+namespace Doctrine\Spatial\ORM;
 
+use Doctrine\Spatial\DBAL\SpatialEventSubscriber as SpatialDBALEventSubscriber;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Schema\Column;
@@ -31,7 +32,7 @@ use Doctrine\ORM\Tools\Event\GenerateSchemaTableEventArgs;
  * @author  Jan Sorgalla <jsorgalla@googlemail.com>
  * @version @package_version@>
  */
-class SpatialORMEventSubscriber extends SpatialDBALEventSubscriber
+class SpatialEventSubscriber extends SpatialDBALEventSubscriber
 {
     public function getSubscribedEvents()
     {

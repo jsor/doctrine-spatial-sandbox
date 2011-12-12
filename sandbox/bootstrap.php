@@ -34,21 +34,21 @@ $em = \Doctrine\ORM\EntityManager::create($connectionOptions, $config);
 
 // ---
 
-\Doctrine\DBAL\Types\Type::addType('point', 'Doctrine\Spatial\Types\PointType');
-\Doctrine\DBAL\Types\Type::addType('linestring', 'Doctrine\Spatial\Types\LineStringType');
-\Doctrine\DBAL\Types\Type::addType('polygon', 'Doctrine\Spatial\Types\PolygonType');
-\Doctrine\DBAL\Types\Type::addType('multipoint', 'Doctrine\Spatial\Types\MultiPointType');
-\Doctrine\DBAL\Types\Type::addType('multilinestring', 'Doctrine\Spatial\Types\MultiLineStringType');
-\Doctrine\DBAL\Types\Type::addType('multipolygon', 'Doctrine\Spatial\Types\MultiPolygonType');
-\Doctrine\DBAL\Types\Type::addType('geometrycollection', 'Doctrine\Spatial\Types\GeometryCollectionType');
+\Doctrine\DBAL\Types\Type::addType('point',              'Doctrine\Spatial\DBAL\Types\PointType');
+\Doctrine\DBAL\Types\Type::addType('linestring',         'Doctrine\Spatial\DBAL\Types\LineStringType');
+\Doctrine\DBAL\Types\Type::addType('polygon',            'Doctrine\Spatial\DBAL\Types\PolygonType');
+\Doctrine\DBAL\Types\Type::addType('multipoint',         'Doctrine\Spatial\DBAL\Types\MultiPointType');
+\Doctrine\DBAL\Types\Type::addType('multilinestring',    'Doctrine\Spatial\DBAL\Types\MultiLineStringType');
+\Doctrine\DBAL\Types\Type::addType('multipolygon',       'Doctrine\Spatial\DBAL\Types\MultiPolygonType');
+\Doctrine\DBAL\Types\Type::addType('geometrycollection', 'Doctrine\Spatial\DBAL\Types\GeometryCollectionType');
 
 $conn = $em->getConnection();
-$conn->getDatabasePlatform()->registerDoctrineTypeMapping('point', 'point');
-$conn->getDatabasePlatform()->registerDoctrineTypeMapping('linestring', 'linestring');
-$conn->getDatabasePlatform()->registerDoctrineTypeMapping('polygon', 'polygon');
-$conn->getDatabasePlatform()->registerDoctrineTypeMapping('multipoint', 'multipoint');
-$conn->getDatabasePlatform()->registerDoctrineTypeMapping('multilinestring', 'multilinestring');
-$conn->getDatabasePlatform()->registerDoctrineTypeMapping('multipolygon', 'multipolygon');
+$conn->getDatabasePlatform()->registerDoctrineTypeMapping('point',              'point');
+$conn->getDatabasePlatform()->registerDoctrineTypeMapping('linestring',         'linestring');
+$conn->getDatabasePlatform()->registerDoctrineTypeMapping('polygon',            'polygon');
+$conn->getDatabasePlatform()->registerDoctrineTypeMapping('multipoint',         'multipoint');
+$conn->getDatabasePlatform()->registerDoctrineTypeMapping('multilinestring',    'multilinestring');
+$conn->getDatabasePlatform()->registerDoctrineTypeMapping('multipolygon',       'multipolygon');
 $conn->getDatabasePlatform()->registerDoctrineTypeMapping('geometrycollection', 'geometrycollection');
 
-$conn->getEventManager()->addEventSubscriber(new \Doctrine\Spatial\SpatialORMEventSubscriber());
+$conn->getEventManager()->addEventSubscriber(new \Doctrine\Spatial\ORM\SpatialEventSubscriber());

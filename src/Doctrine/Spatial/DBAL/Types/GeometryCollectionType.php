@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Doctrine\Spatial\Types;
+namespace Doctrine\Spatial\DBAL\Types;
 
 /**
  * Type that maps a SQL Spatial GeometryCollection data type to a Geometry GeometryCollection object.

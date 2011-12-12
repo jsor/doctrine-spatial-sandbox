@@ -17,7 +17,7 @@
  * <http://www.doctrine-project.org>.
 */
 
-namespace Doctrine\Spatial;
+namespace Doctrine\Spatial\DBAL;
 
 use Doctrine\Common\EventSubscriber;
 use Doctrine\DBAL\Events;
@@ -37,7 +37,7 @@ use Doctrine\DBAL\Schema\Column;
  * @author  Jan Sorgalla <jsorgalla@googlemail.com>
  * @version @package_version@>
  */
-class SpatialDBALEventSubscriber implements EventSubscriber
+class SpatialEventSubscriber implements EventSubscriber
 {
     public function getSubscribedEvents()
     {
