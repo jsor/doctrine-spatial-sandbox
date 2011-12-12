@@ -2,50 +2,55 @@
 
 namespace Entities;
 
+use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Spatial\Mapping\Annotation as Spatial;
+
 /**
- * @Entity
- * @Table(name="geo")
+ * @ORM\Entity
+ * @ORM\Table(name="geo")
  */
 class Geo
 {
     /**
-     * @Id @Column(type="integer")
-     * @GeneratedValue
+     * @ORM\Id 
+     * @ORM\Column(type="integer")
+     * @ORM\GeneratedValue
      */
     private $id;
 
     /**
-     * @Column(type="point", nullable=true)
+     * @ORM\Column(type="point", nullable=true)
+     * @Spatial\Column(srid=4326, dimension=3, index=false)
      */
     private $point;
 
     /**
-     * @Column(type="linestring", nullable=true)
+     * @ORM\Column(type="linestring", nullable=true)
      */
     private $linestring;
 
     /**
-     * @Column(type="polygon", nullable=true)
+     * @ORM\Column(type="polygon", nullable=true)
      */
     private $polygon;
 
     /**
-     * @Column(type="multipoint", nullable=true)
+     * @ORM\Column(type="multipoint", nullable=true)
      */
     private $multipoint;
 
     /**
-     * @Column(type="multilinestring", nullable=true)
+     * @ORM\Column(type="multilinestring", nullable=true)
      */
     private $multilinestring;
 
     /**
-     * @Column(type="multipolygon", nullable=true)
+     * @ORM\Column(type="multipolygon", nullable=true)
      */
     private $multipolygon;
 
     /**
-     * @Column(type="geometrycollection", nullable=true)
+     * @ORM\Column(type="geometrycollection", nullable=true)
      */
     private $geometrycollection;
 

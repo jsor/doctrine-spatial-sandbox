@@ -23,6 +23,7 @@
         "symfony/class-loader": "2.1.0-dev",
         "doctrine/common": "master-dev",
         "doctrine/orm": "master-dev",
+        "gedmo/doctrine-extensions": "master-dev",
         "jsor/dbal": "*"
     },
     "autoload": {

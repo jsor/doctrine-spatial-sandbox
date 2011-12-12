@@ -28,7 +28,7 @@ use Doctrine\DBAL\Schema\Column;
  *
  * @author  Jan Sorgalla <jsorgalla@googlemail.com>
  */
-class SpatialEventSubscriber implements EventSubscriber
+class SchemaEventSubscriber implements EventSubscriber
 {
     /**
      * {@inheritDoc}
@@ -332,16 +332,14 @@ class SpatialEventSubscriber implements EventSubscriber
     {
         $query = array();
 
-        if ($column->hasPlatformOption('spatial_srid')) {
-            $srid = $column->getPlatformOption('spatial_srid');
-        } else {
-            $srid = -1;
-        }
+        $spatial = array(
+            'srid'      => -1,
+            'dimension' => 2,
+            'index'     => true
+        );
 
-        if ($column->hasPlatformOption('spatial_dimension')) {
-            $dimension = $column->getPlatformOption('spatial_dimension');
-        } else {
-            $dimension = 2;
+        if ($column->hasPlatformOption('spatial')) {
+            $spatial = array_merge($spatial, $column->getPlatformOption('spatial'));
         }
 
         // Geometry columns are created by AddGeometryColumn stored procedure
@@ -349,10 +347,24 @@ class SpatialEventSubscriber implements EventSubscriber
             "SELECT AddGeometryColumn('%s', '%s', %d, '%s', %d)",
             $tableName, // Table name
             $columnName, // Column name
-            $srid, // SRID
+            $spatial['srid'], // SRID
             strtoupper($column->getType()->getName()), // Geometry type
-            $dimension // Dimension
+            $spatial['dimension'] // Dimension
         );
+
+        if ($spatial['index']) {
+            // Add a spatial index to the field
+            $indexName = $this->generateIndexName(
+                array($tableName, $columnName), "spatialidx"
+            );
+
+            $query[] = sprintf(
+                "CREATE INDEX %s ON %s USING GIST (%s)",
+                $indexName,
+                $tableName, // Table name
+                $columnName // Column name
+            );
+        }
 
         if ($column->getNotnull()) {
             // Add a NOT NULL constraint to the field
@@ -393,5 +405,18 @@ class SpatialEventSubscriber implements EventSubscriber
         );
 
         return $query;
+    }
+
+    /**
+     * @param  array $columnNames
+     * @return string
+     */
+    protected function generateIndexName($columnNames)
+    {
+        $hash = implode('', array_map(function($column) {
+            return preg_replace('/[^a-zA-Z0-9_]+/', '', $column);
+        }, (array) $columnNames));
+
+        return substr(strtoupper('SPATIALIDX_' . $hash), 0, 30);
     }
 }

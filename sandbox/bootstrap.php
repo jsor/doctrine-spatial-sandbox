@@ -15,7 +15,12 @@ $classLoader->register();
 
 $config = new \Doctrine\ORM\Configuration();
 $config->setMetadataCacheImpl(new \Doctrine\Common\Cache\ArrayCache);
-$driverImpl = $config->newDefaultAnnotationDriver(array(__DIR__."/Entities"));
+
+$annotationReader = new \Doctrine\Common\Annotations\AnnotationReader();
+$driverImpl = new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($annotationReader, array(
+    __DIR__."/Entities",
+));
+
 $config->setMetadataDriverImpl($driverImpl);
 
 $config->setProxyDir(__DIR__ . '/Proxies');
@@ -51,4 +56,7 @@ $conn->getDatabasePlatform()->registerDoctrineTypeMapping('multilinestring',    
 $conn->getDatabasePlatform()->registerDoctrineTypeMapping('multipolygon',       'multipolygon');
 $conn->getDatabasePlatform()->registerDoctrineTypeMapping('geometrycollection', 'geometrycollection');
 
-$conn->getEventManager()->addEventSubscriber(new \Doctrine\Spatial\ORM\SpatialEventSubscriber());
+$mappedSubscriber = new \Doctrine\Spatial\MappedEventSubscriber();
+$schemaSubscriber = new \Doctrine\Spatial\ORM\SchemaEventSubscriber($mappedSubscriber);
+
+$conn->getEventManager()->addEventSubscriber($schemaSubscriber);
