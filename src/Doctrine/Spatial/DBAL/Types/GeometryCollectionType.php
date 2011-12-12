@@ -12,13 +12,13 @@
 namespace Doctrine\Spatial\DBAL\Types;
 
 /**
- * Type that maps a SQL Spatial GeometryCollection data type to a Geometry GeometryCollection object.
- *
- * @author  Jan Sorgalla <jsorgalla@googlemail.com>
- * @version @package_version@
+ * @author Jan Sorgalla <jsorgalla@googlemail.com>
  */
 class GeometryCollectionType extends Type
 {
+    /**
+     * {@inheritDoc}
+     */
     public function getName()
     {
         return Type::GEOMETRYCOLLECTION;

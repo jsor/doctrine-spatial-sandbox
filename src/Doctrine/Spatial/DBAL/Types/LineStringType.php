@@ -12,11 +12,13 @@
 namespace Doctrine\Spatial\DBAL\Types;
 
 /**
- * @author  Jan Sorgalla <jsorgalla@googlemail.com>
- * @version @package_version@
+ * @author Jan Sorgalla <jsorgalla@googlemail.com>
  */
 class LineStringType extends Type
 {
+    /**
+     * {@inheritDoc}
+     */
     public function getName()
     {
         return Type::LINESTRING;

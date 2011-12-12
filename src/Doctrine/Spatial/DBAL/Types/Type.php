@@ -16,10 +16,9 @@ use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 
 /**
- * Abstract type for representing SQL Spatial data type.
+ * Abstract type for representing a SQL Spatial data type.
  *
- * @author  Jan Sorgalla <jsorgalla@googlemail.com>
- * @version @package_version@
+ * @author Jan Sorgalla <jsorgalla@googlemail.com>
  */
 abstract class Type extends BaseType
 {
@@ -31,6 +30,9 @@ abstract class Type extends BaseType
     const MULTIPOLYGON       = 'multipolygon';
     const GEOMETRYCOLLECTION = 'geometrycollection';
 
+    /**
+     * {@inheritDoc}
+     */
     public function canRequireSQLConversion()
     {
         return true;

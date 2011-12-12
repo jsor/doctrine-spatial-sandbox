@@ -1,21 +1,13 @@
 <?php
+
 /*
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * This file is part of Doctrine\Spatial.
  *
- * This software consists of voluntary contributions made by many individuals
- * and is licensed under the LGPL. For more information, see
- * <http://www.doctrine-project.org>.
-*/
+ * (c) Jan Sorgalla <jsorgalla@googlemail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Doctrine\Spatial\DBAL;
 
@@ -35,10 +27,12 @@ use Doctrine\DBAL\Schema\Column;
  * DBAL event subscriber enabling spatial data support.
  *
  * @author  Jan Sorgalla <jsorgalla@googlemail.com>
- * @version @package_version@>
  */
 class SpatialEventSubscriber implements EventSubscriber
 {
+    /**
+     * {@inheritDoc}
+     */
     public function getSubscribedEvents()
     {
         return array(
@@ -53,8 +47,7 @@ class SpatialEventSubscriber implements EventSubscriber
     }
 
     /**
-     * @param SchemaCreateTableColumnEventArgs $args
-     * @return void
+     * @param \Doctrine\ORM\Tools\Event\SchemaCreateTableColumnEventArgs $args
      */
     public function onSchemaCreateTableColumn(SchemaCreateTableColumnEventArgs $args)
     {
@@ -82,8 +75,7 @@ class SpatialEventSubscriber implements EventSubscriber
     }
 
     /**
-     * @param SchemaCreateTableColumnEventArgs $args
-     * @return void
+     * @param \Doctrine\ORM\Tools\Event\SchemaDropTableEventArgs $args
      */
     public function onSchemaDropTable(SchemaDropTableEventArgs $args)
     {
@@ -107,8 +99,7 @@ class SpatialEventSubscriber implements EventSubscriber
     }
 
     /**
-     * @param SchemaAlterTableAddColumnEventArgs $args
-     * @return void
+     * @param \Doctrine\ORM\Tools\Event\SchemaAlterTableAddColumnEventArgs $args
      */
     public function onSchemaAlterTableAddColumn(SchemaAlterTableAddColumnEventArgs $args)
     {
@@ -138,8 +129,7 @@ class SpatialEventSubscriber implements EventSubscriber
     }
 
     /**
-     * @param SchemaAlterTableRemoveColumnEventArgs $args
-     * @return void
+     * @param \Doctrine\ORM\Tools\Event\SchemaAlterTableRemoveColumnEventArgs $args
      */
     public function onSchemaAlterTableRemoveColumn(SchemaAlterTableRemoveColumnEventArgs $args)
     {
@@ -169,8 +159,7 @@ class SpatialEventSubscriber implements EventSubscriber
     }
 
     /**
-     * @param SchemaAlterTableChangeColumnEventArgs $args
-     * @return void
+     * @param \Doctrine\ORM\Tools\Event\SchemaAlterTableChangeColumnEventArgs $args
      */
     public function onSchemaAlterTableChangeColumn(SchemaAlterTableChangeColumnEventArgs $args)
     {
@@ -211,8 +200,7 @@ class SpatialEventSubscriber implements EventSubscriber
     }
 
     /**
-     * @param SchemaAlterTableRenameColumnEventArgs $args
-     * @return void
+     * @param \Doctrine\ORM\Tools\Event\SchemaAlterTableRenameColumnEventArgs $args
      */
     public function onSchemaAlterTableRenameColumn(SchemaAlterTableRenameColumnEventArgs $args)
     {
@@ -249,8 +237,7 @@ class SpatialEventSubscriber implements EventSubscriber
     }
 
     /**
-     * @param SchemaColumnDefinitionEventArgs $args
-     * @return void
+     * @param \Doctrine\ORM\Tools\Event\SchemaColumnDefinitionEventArgs $args
      */
     public function onSchemaColumnDefinition(SchemaColumnDefinitionEventArgs $args)
     {
@@ -261,6 +248,9 @@ class SpatialEventSubscriber implements EventSubscriber
         }
     }
 
+    /**
+     * @param \Doctrine\ORM\Tools\Event\SchemaColumnDefinitionEventArgs $args
+     */
     protected function setPostgresqlSchemaColumnDefinition(SchemaColumnDefinitionEventArgs $args)
     {
         $tableColumn = $args->getTableColumn();
@@ -283,7 +273,7 @@ class SpatialEventSubscriber implements EventSubscriber
         if (!isset($tableColumn['platformoptions'])) {
             $tableColumn['platformoptions'] = array();
         }
-        
+
         $srid      = (int) $row['srid'];
         $dimension = (int) $row['coord_dimension'];
 
@@ -312,6 +302,10 @@ class SpatialEventSubscriber implements EventSubscriber
             ->setColumn(new Column($tableColumn['field'], Type::getType($type), $options));
     }
 
+    /**
+     * @param string $type
+     * @return boolean 
+     */
     protected function isGeometryColumn($type)
     {
         switch (strtolower($type)) {
@@ -328,6 +322,12 @@ class SpatialEventSubscriber implements EventSubscriber
         }
     }
 
+    /**
+     * @param string $tableName
+     * @param string $columnName
+     * @param \Doctrine\DBAL\Schema\Column $column
+     * @return array 
+     */
     protected function getPostgresqlAddColumnSQL($tableName, $columnName, Column $column)
     {
         $query = array();
@@ -366,6 +366,12 @@ class SpatialEventSubscriber implements EventSubscriber
         return $query;
     }
 
+    /**
+     * @param string $tableName
+     * @param string $columnName
+     * @param boolean $notnull
+     * @return array 
+     */
     protected function getPostgresqlDropColumnSQL($tableName, $columnName, $notnull)
     {
         $query = array();
