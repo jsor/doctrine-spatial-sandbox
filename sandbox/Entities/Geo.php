@@ -20,7 +20,7 @@ class Geo
 
     /**
      * @ORM\Column(type="point", nullable=true)
-     * @Spatial\Column(srid=4326, dimension=3, index=false)
+     * @Spatial\Column(srid=4326, dimension=3, index=true)
      */
     private $point;
 

@@ -112,13 +112,7 @@ class SchemaEventSubscriber extends DBALSchemaEventSubscriber
                 );
 
                 $table->changeColumn($column->getName(), $options);
-
-                if ($spatial['index']) {
-                    $table->addIndex(array($columnName), $this->generateIndexName(array($columnName)));
-                }
             }
-
-            //print_r($table);
         }
     }
 }

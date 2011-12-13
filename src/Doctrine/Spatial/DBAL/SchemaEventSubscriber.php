@@ -15,6 +15,7 @@ use Doctrine\Common\EventSubscriber;
 use Doctrine\DBAL\Events;
 use Doctrine\DBAL\Event\SchemaCreateTableColumnEventArgs;
 use Doctrine\DBAL\Event\SchemaDropTableEventArgs;
+use Doctrine\DBAL\Event\SchemaIndexDefinitionEventArgs;
 use Doctrine\DBAL\Event\SchemaColumnDefinitionEventArgs;
 use Doctrine\DBAL\Event\SchemaAlterTableAddColumnEventArgs;
 use Doctrine\DBAL\Event\SchemaAlterTableRemoveColumnEventArgs;
@@ -39,6 +40,7 @@ class SchemaEventSubscriber implements EventSubscriber
             Events::onSchemaCreateTableColumn,
             Events::onSchemaDropTable,
             Events::onSchemaColumnDefinition,
+            Events::onSchemaIndexDefinition,
             Events::onSchemaAlterTableAddColumn,
             Events::onSchemaAlterTableRemoveColumn,
             Events::onSchemaAlterTableChangeColumn,
@@ -237,6 +239,17 @@ class SchemaEventSubscriber implements EventSubscriber
     }
 
     /**
+     * @param \Doctrine\ORM\Tools\Event\SchemaIndexDefinitionEventArgs $args
+     */
+    public function onSchemaIndexDefinition(SchemaIndexDefinitionEventArgs $args)
+    {
+        $index = $args->getTableIndex();
+        if (0 === stripos($index['name'], 'spatialidx')) {
+            $args->preventDefault();
+        }
+    }
+
+    /**
      * @param \Doctrine\ORM\Tools\Event\SchemaColumnDefinitionEventArgs $args
      */
     public function onSchemaColumnDefinition(SchemaColumnDefinitionEventArgs $args)
@@ -263,6 +276,8 @@ class SchemaEventSubscriber implements EventSubscriber
             return;
         }
 
+        $indexes = $conn->getSchemaManager()->listTableIndexes($table);
+
         $sql = 'SELECT coord_dimension, srid, type FROM geometry_columns WHERE f_table_name = ? AND f_geometry_column = ?';
         $stmt = $conn->prepare($sql);
         $stmt->execute(array($table, $tableColumn['field']));
@@ -274,8 +289,21 @@ class SchemaEventSubscriber implements EventSubscriber
             $tableColumn['platformoptions'] = array();
         }
 
-        $srid      = (int) $row['srid'];
-        $dimension = (int) $row['coord_dimension'];
+        $tableColumn['platformoptions']['spatial'] = array(
+            'srid'      => (int) $row['srid'],
+            'dimension' => (int) $row['coord_dimension'],
+            'index'     => false
+        );
+
+        foreach ($indexes as $index) {
+            $indexName = $index->getName();
+
+            if (0 === stripos($indexName, 'spatialidx')) {
+                if ($index->getColumns() === array($tableColumn['field'])) {
+                    $tableColumn['platformoptions']['spatial']['index'] = true;
+                }
+            }
+        }
 
         $options = array(
             'length'          => null,
@@ -288,13 +316,7 @@ class SchemaEventSubscriber implements EventSubscriber
             'unsigned'        => false,
             'autoincrement'   => false,
             'comment'         => $tableColumn['comment'],
-            'platformOptions' => array_merge(
-                (array) $tableColumn['platformoptions'],
-                array(
-                    'spatial_srid'      => $srid,
-                    'spatial_dimension' => $dimension
-                )
-            )
+            'platformOptions' => $tableColumn['platformoptions']
         );
 
         $args
