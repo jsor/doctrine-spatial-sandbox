@@ -74,7 +74,7 @@ abstract class AbstractHandler
     {
         $index = $args->getTableIndex();
 
-        if (0 === stripos($index['name'], 'SPATIALIDX_')) {
+        if (0 === stripos($index['name'], 'spatialidx_')) {
             $args->preventDefault();
         }
     }
@@ -95,6 +95,6 @@ abstract class AbstractHandler
         $table  = preg_replace('/[^a-zA-Z0-9_]+/', '', $table);
         $column = preg_replace('/[^a-zA-Z0-9_]+/', '', $column);
 
-        return substr(strtolower('SPATIALIDX_' . $table . $column), 0, 30);
+        return substr(strtolower('spatialidx_' . $table . $column), 0, 30);
     }
 }
