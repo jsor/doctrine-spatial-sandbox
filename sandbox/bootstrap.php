@@ -28,7 +28,7 @@ $config->setProxyNamespace('Proxies');
 
 $connectionOptions = array(
     'driver' => 'pdo_pgsql',
-    //'driver' => 'pdo_mysql',
+    'driver' => 'pdo_mysql',
     'dbname' => 'doctrine_spatial',
     'user' => 'root',
     'password' => 'local',

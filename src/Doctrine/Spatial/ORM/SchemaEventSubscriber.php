@@ -86,23 +86,28 @@ class SchemaEventSubscriber extends DBALSchemaEventSubscriber
             }
 
             foreach ($table->getColumns() as $column) {
-                if (!$this->isGeometryColumn($column->getType()->getName())) {
+                if (!$column->getType() instanceof \Doctrine\Spatial\DBAL\Types\Type) {
                     continue;
                 }
 
                 $columnName = $column->getName();
+                
+                $mapping = new \Doctrine\Spatial\Mapping\Annotation\Column(array());
 
                 $spatial = array(
-                    'srid'      => -1,
-                    'dimension' => 2,
-                    'index'     => true
+                    'srid'      => $mapping->srid,
+                    'dimension' => $mapping->dimension,
+                    'index'     => $mapping->index
                 );
 
                 if (isset($config['spatial']['column'][$columnName])) {
                     $spatial = array_merge($spatial, $config['spatial']['column'][$columnName]);
                 }
 
-                $table->getColumn($column->getName())->setCustomSchemaOption('spatial', $spatial);
+                $table->getColumn($columnName)
+                    ->setCustomSchemaOption('spatial_srid',      (int)  $spatial['srid'])
+                    ->setCustomSchemaOption('spatial_dimension', (int)  $spatial['dimension'])
+                    ->setCustomSchemaOption('spatial_index',     (bool) $spatial['index']);
             }
         }
     }

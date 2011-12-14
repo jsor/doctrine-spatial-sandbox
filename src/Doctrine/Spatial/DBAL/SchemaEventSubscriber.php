@@ -21,8 +21,7 @@ use Doctrine\DBAL\Event\SchemaAlterTableAddColumnEventArgs;
 use Doctrine\DBAL\Event\SchemaAlterTableRemoveColumnEventArgs;
 use Doctrine\DBAL\Event\SchemaAlterTableChangeColumnEventArgs;
 use Doctrine\DBAL\Event\SchemaAlterTableRenameColumnEventArgs;
-use Doctrine\DBAL\Types\Type;
-use Doctrine\DBAL\Schema\Column;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
 
 /**
  * DBAL event subscriber enabling spatial data support.
@@ -31,6 +30,16 @@ use Doctrine\DBAL\Schema\Column;
  */
 class SchemaEventSubscriber implements EventSubscriber
 {
+    protected $handlerClasses = array(
+        'postgresql' => '\Doctrine\Spatial\DBAL\Handler\PostgreSqlHandler',
+        'mysql'      => '\Doctrine\Spatial\DBAL\Handler\MySqlHandler'
+    );
+
+    /**
+     * @var array 
+     */
+    protected $handlerMap = array();
+
     /**
      * {@inheritDoc}
      */
@@ -49,31 +58,30 @@ class SchemaEventSubscriber implements EventSubscriber
     }
 
     /**
+     * @param \Doctrine\DBAL\Platforms\AbstractPlatform $platform
+     * @return \Doctrine\Spatial\DBAL\HandlerInterface 
+     */
+    public function getHandler(AbstractPlatform $platform)
+    {
+        $name = $platform->getName();
+
+        if (isset($this->handlerMap[$name])) {
+            return $this->handlerMap[$name];
+        }
+
+        if (!isset($this->handlerClasses[$name])) {
+            throw new \RuntimeException('The database platform ' . $name . ' is not supported');
+        }
+
+        return $this->handlerMap[$name] = new $this->handlerClasses[$name]();
+    }
+
+    /**
      * @param \Doctrine\ORM\Tools\Event\SchemaCreateTableColumnEventArgs $args
      */
     public function onSchemaCreateTableColumn(SchemaCreateTableColumnEventArgs $args)
     {
-        $column = $args->getColumn();
-
-        if (!$this->isGeometryColumn($column->getType()->getName())) {
-            return;
-        }
-
-        $platform = $args->getPlatform();
-
-        switch ($platform->getName()) {
-            case 'postgresql':
-                $args
-                    ->preventDefault()
-                    ->addSql(
-                        $this->getPostgresqlAddColumnSQL(
-                            $args->getTable()->getQuotedName($platform),
-                            $column->getQuotedName($platform),
-                            $column
-                        )
-                    );
-                break;
-        }
+        $this->getHandler($args->getPlatform())->onSchemaCreateTableColumn($args);
     }
 
     /**
@@ -81,23 +89,7 @@ class SchemaEventSubscriber implements EventSubscriber
      */
     public function onSchemaDropTable(SchemaDropTableEventArgs $args)
     {
-        $table    = $args->getTable();
-        $platform = $args->getPlatform();
-
-        switch ($platform->getName()) {
-            case 'postgresql':
-                // We should check here if the table contains geometry columns
-                // but we must ensure that we either always get a Table instance 
-                // or have a connection availabe to query the geometry_columns table.
-                if ($table instanceof Table) {
-                    $table = $table->getQuotedName($platform);
-                }
-
-                $args
-                    ->preventDefault()
-                    ->setSql("SELECT DropGeometryTable('" . $table . "')");
-                break;
-        }
+        $this->getHandler($args->getPlatform())->onSchemaDropTable($args);
     }
 
     /**
@@ -105,29 +97,7 @@ class SchemaEventSubscriber implements EventSubscriber
      */
     public function onSchemaAlterTableAddColumn(SchemaAlterTableAddColumnEventArgs $args)
     {
-        $column = $args->getColumn();
-
-        if (!$this->isGeometryColumn($column->getType()->getName())) {
-            return;
-        }
-
-        $platform = $args->getPlatform();
-
-        switch ($platform->getName()) {
-            case 'postgresql':
-                $diff = $args->getTableDiff();
-                $tableName = $diff->newName !== false ? $diff->newName : $diff->name;;
-                $args
-                    ->preventDefault()
-                    ->addSql(
-                        $this->getPostgresqlAddColumnSQL(
-                            $tableName,
-                            $column->getQuotedName($platform),
-                            $column
-                        )
-                    );
-                break;
-        }
+        $this->getHandler($args->getPlatform())->onSchemaAlterTableAddColumn($args);
     }
 
     /**
@@ -135,29 +105,7 @@ class SchemaEventSubscriber implements EventSubscriber
      */
     public function onSchemaAlterTableRemoveColumn(SchemaAlterTableRemoveColumnEventArgs $args)
     {
-        $column = $args->getColumn();
-
-        if (!$this->isGeometryColumn($column->getType()->getName())) {
-            return;
-        }
-
-        $platform = $args->getPlatform();
-
-        switch ($platform->getName()) {
-            case 'postgresql':
-                $diff = $args->getTableDiff();
-                $tableName = $diff->newName !== false ? $diff->newName : $diff->name;;
-                $args
-                    ->preventDefault()
-                    ->addSql(
-                        $this->getPostgresqlDropColumnSQL(
-                            $tableName,
-                            $column->getQuotedName($platform),
-                            $column->getNotnull()
-                        )
-                    );
-                break;
-        }
+        $this->getHandler($args->getPlatform())->onSchemaAlterTableRemoveColumn($args);
     }
 
     /**
@@ -165,39 +113,7 @@ class SchemaEventSubscriber implements EventSubscriber
      */
     public function onSchemaAlterTableChangeColumn(SchemaAlterTableChangeColumnEventArgs $args)
     {
-        // @TODO: Make granular change detection (eg. if only SRID has changed)
-
-        $columnDiff = $args->getColumnDiff();
-        $column = $columnDiff->column;
-
-        if (!$this->isGeometryColumn($column->getType()->getName())) {
-            return;
-        }
-
-        $platform = $args->getPlatform();
-
-        switch ($platform->getName()) {
-            case 'postgresql':
-                $diff = $args->getTableDiff();
-                $tableName = $diff->newName !== false ? $diff->newName : $diff->name;
-                $args
-                    ->preventDefault()
-                    ->addSql(
-                        $this->getPostgresqlDropColumnSQL(
-                            $tableName,
-                            $columnDiff->oldColumnName,
-                            $column->getNotnull()
-                        )
-                    )
-                    ->addSql(
-                        $this->getPostgresqlAddColumnSQL(
-                            $tableName,
-                            $column->getQuotedName($platform),
-                            $column
-                        )
-                    );
-                break;
-        }
+        $this->getHandler($args->getPlatform())->onSchemaAlterTableChangeColumn($args);
     }
 
     /**
@@ -205,19 +121,7 @@ class SchemaEventSubscriber implements EventSubscriber
      */
     public function onSchemaAlterTableRenameColumn(SchemaAlterTableRenameColumnEventArgs $args)
     {
-        $column = $args->getColumn();
-
-        if (!$this->isGeometryColumn($column->getType()->getName())) {
-            return;
-        }
-
-        $platform = $args->getPlatform();
-
-        switch ($platform->getName()) {
-            case 'postgresql':
-                throw new \Doctrine\DBAL\DBALException('Spatial columns cannot be renamed');
-                break;
-        }
+        $this->getHandler($args->getPlatform())->onSchemaAlterTableRenameColumn($args);
     }
 
     /**
@@ -225,10 +129,7 @@ class SchemaEventSubscriber implements EventSubscriber
      */
     public function onSchemaIndexDefinition(SchemaIndexDefinitionEventArgs $args)
     {
-        $index = $args->getTableIndex();
-        if (0 === stripos($index['name'], 'spatialidx')) {
-            $args->preventDefault();
-        }
+        $this->getHandler($args->getDatabasePlatform())->onSchemaIndexDefinition($args);
     }
 
     /**
@@ -236,188 +137,6 @@ class SchemaEventSubscriber implements EventSubscriber
      */
     public function onSchemaColumnDefinition(SchemaColumnDefinitionEventArgs $args)
     {
-        switch ($args->getDatabasePlatform()->getName()) {
-            case 'postgresql':
-                $this->setPostgresqlSchemaColumnDefinition($args);
-                break;
-        }
-    }
-
-    /**
-     * @param \Doctrine\ORM\Tools\Event\SchemaColumnDefinitionEventArgs $args
-     */
-    protected function setPostgresqlSchemaColumnDefinition(SchemaColumnDefinitionEventArgs $args)
-    {
-        $tableColumn = $args->getTableColumn();
-        $table       = $args->getTable();
-        $conn        = $args->getConnection();
-
-        $tableColumn = array_change_key_case($tableColumn, CASE_LOWER);
-
-        if ($tableColumn['type'] !== 'geometry') {
-            return;
-        }
-
-        $sql = "SELECT COUNT(*) as index_exists
-                FROM pg_class, pg_index
-                WHERE oid IN (
-                    SELECT indexrelid
-                    FROM pg_index si, pg_class sc, pg_namespace sn
-                    WHERE sc.relname = ? AND sc.oid = si.indrelid AND sc.relnamespace = sn.oid
-                 ) AND pg_index.indexrelid = oid AND relname = ?";
-
-        $stmt = $conn->prepare($sql);
-        $stmt->execute(array($table, $this->generateIndexName($table, $tableColumn['field'])));
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-        $indexExists = $row['index_exists'] > 0;
-
-        $sql = 'SELECT coord_dimension, srid, type FROM geometry_columns WHERE f_table_name = ? AND f_geometry_column = ?';
-        $stmt = $conn->prepare($sql);
-        $stmt->execute(array($table, $tableColumn['field']));
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        $type = strtolower($row['type']);
-
-        $options = array(
-            'length'          => null,
-            'notnull'         => (bool) $tableColumn['isnotnull'],
-            'default'         => $tableColumn['default'],
-            'primary'         => (bool) ($tableColumn['pri'] == 't'),
-            'precision'       => null,
-            'scale'           => null,
-            'fixed'           => null,
-            'unsigned'        => false,
-            'autoincrement'   => false,
-            'comment'         => $tableColumn['comment']
-        );
-        
-        $column = new Column($tableColumn['field'], Type::getType($type), $options);
-
-        $spatial = array(
-            'srid'      => (int) $row['srid'],
-            'dimension' => (int) $row['coord_dimension'],
-            'index'     => $indexExists
-        );
-
-        $column->setCustomSchemaOption('spatial', $spatial);
-
-        $args
-            ->preventDefault()
-            ->setColumn($column);
-    }
-
-    /**
-     * @param string $type
-     * @return boolean 
-     */
-    protected function isGeometryColumn($type)
-    {
-        switch (strtolower($type)) {
-            case 'point':
-            case 'linestring':
-            case 'polygon':
-            case 'multipoint':
-            case 'multilinestring':
-            case 'multipolygon':
-            case 'geometrycollection':
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    /**
-     * @param string $tableName
-     * @param string $columnName
-     * @param \Doctrine\DBAL\Schema\Column $column
-     * @return array 
-     */
-    protected function getPostgresqlAddColumnSQL($tableName, $columnName, Column $column)
-    {
-        $query = array();
-
-        $spatial = array(
-            'srid'      => -1,
-            'dimension' => 2,
-            'index'     => true
-        );
-
-        if ($column->hasCustomSchemaOption('spatial')) {
-            $spatial = array_merge($spatial, $column->getCustomSchemaOption('spatial'));
-        }
-
-        // Geometry columns are created by AddGeometryColumn stored procedure
-        $query[] = sprintf(
-            "SELECT AddGeometryColumn('%s', '%s', %d, '%s', %d)",
-            $tableName, // Table name
-            $columnName, // Column name
-            $spatial['srid'], // SRID
-            strtoupper($column->getType()->getName()), // Geometry type
-            $spatial['dimension'] // Dimension
-        );
-
-        if ($spatial['index']) {
-            // Add a spatial index to the field
-            $indexName = $this->generateIndexName($tableName, $columnName);
-
-            $query[] = sprintf(
-                "CREATE INDEX %s ON %s USING GIST (%s)",
-                $indexName,
-                $tableName, // Table name
-                $columnName // Column name
-            );
-        }
-
-        if ($column->getNotnull()) {
-            // Add a NOT NULL constraint to the field
-            $query[] = sprintf(
-                "ALTER TABLE %s ALTER %s SET NOT NULL",
-                $tableName, // Table name
-                $columnName // Column name
-            );
-        }
-
-        return $query;
-    }
-
-    /**
-     * @param string $tableName
-     * @param string $columnName
-     * @param boolean $notnull
-     * @return array 
-     */
-    protected function getPostgresqlDropColumnSQL($tableName, $columnName, $notnull)
-    {
-        $query = array();
-        
-        if ($notnull) {
-            // Remove NOT NULL constraint from the field
-            $query[] = sprintf(
-                "ALTER TABLE %s ALTER %s SET DEFAULT NULL",
-                $tableName, // Table name
-                $columnName // Column name
-            );
-        }
-
-        // We use DropGeometryColumn() to also drop entries from the geometry_columns table
-        $query[] = sprintf(
-            "SELECT DropGeometryColumn ('%s', '%s')",
-            $tableName, // Table name
-            $columnName // Column name
-        );
-
-        return $query;
-    }
-
-    /**
-     * @param  array $columnNames
-     * @return string
-     */
-    protected function generateIndexName($table, $column)
-    {
-        $table  = preg_replace('/[^a-zA-Z0-9_]+/', '', $table);
-        $column = preg_replace('/[^a-zA-Z0-9_]+/', '', $column);
-
-        return substr(strtolower('SPATIALIDX_' . $table . $column), 0, 30);
+        $this->getHandler($args->getDatabasePlatform())->onSchemaColumnDefinition($args);
     }
 }

@@ -24,5 +24,5 @@ final class Column extends Annotation
     /** @var integer */
     public $dimension = 2;
     /** @var boolean */
-    public $index = true;
+    public $index = false; // Set to false because MySQL InnoDB doesn't support spatial indexes
 }
