@@ -102,16 +102,7 @@ class SchemaEventSubscriber extends DBALSchemaEventSubscriber
                     $spatial = array_merge($spatial, $config['spatial']['column'][$columnName]);
                 }
 
-                $options = array(
-                    'platformOptions' => array_merge(
-                        $column->getPlatformOptions(),
-                        array(
-                            'spatial' => $spatial
-                        )
-                    )
-                );
-
-                $table->changeColumn($column->getName(), $options);
+                $table->getColumn($column->getName())->setCustomSchemaOption('spatial', $spatial);
             }
         }
     }

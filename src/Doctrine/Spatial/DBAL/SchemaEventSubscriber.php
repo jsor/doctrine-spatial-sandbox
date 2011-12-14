@@ -179,7 +179,7 @@ class SchemaEventSubscriber implements EventSubscriber
         switch ($platform->getName()) {
             case 'postgresql':
                 $diff = $args->getTableDiff();
-                $tableName = $diff->newName !== false ? $diff->newName : $diff->name;;
+                $tableName = $diff->newName !== false ? $diff->newName : $diff->name;
                 $args
                     ->preventDefault()
                     ->addSql(
@@ -193,8 +193,7 @@ class SchemaEventSubscriber implements EventSubscriber
                         $this->getPostgresqlAddColumnSQL(
                             $tableName,
                             $column->getQuotedName($platform),
-                            $column->getType()->getName(),
-                            $column->getNotnull()
+                            $column
                         )
                     );
                 break;
@@ -216,24 +215,7 @@ class SchemaEventSubscriber implements EventSubscriber
 
         switch ($platform->getName()) {
             case 'postgresql':
-                $diff = $args->getTableDiff();
-                $tableName = $diff->newName !== false ? $diff->newName : $diff->name;;
-                $args
-                    ->preventDefault()
-                    ->addSql(
-                        $this->getPostgresqlDropColumnSQL(
-                            $tableName,
-                            $args->getOldColumnName(),
-                            $column->getNotnull()
-                        )
-                    )
-                    ->addSql(
-                        $this->getPostgresqlAddColumnSQL(
-                            $tableName,
-                            $column->getQuotedName($platform),
-                            $column
-                        )
-                    );
+                throw new \Doctrine\DBAL\DBALException('Spatial columns cannot be renamed');
                 break;
         }
     }
@@ -276,7 +258,18 @@ class SchemaEventSubscriber implements EventSubscriber
             return;
         }
 
-        $indexes = $conn->getSchemaManager()->listTableIndexes($table);
+        $sql = "SELECT COUNT(*) as index_exists
+                FROM pg_class, pg_index
+                WHERE oid IN (
+                    SELECT indexrelid
+                    FROM pg_index si, pg_class sc, pg_namespace sn
+                    WHERE sc.relname = ? AND sc.oid = si.indrelid AND sc.relnamespace = sn.oid
+                 ) AND pg_index.indexrelid = oid AND relname = ?";
+
+        $stmt = $conn->prepare($sql);
+        $stmt->execute(array($table, $this->generateIndexName($table, $tableColumn['field'])));
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $indexExists = $row['index_exists'] > 0;
 
         $sql = 'SELECT coord_dimension, srid, type FROM geometry_columns WHERE f_table_name = ? AND f_geometry_column = ?';
         $stmt = $conn->prepare($sql);
@@ -284,26 +277,6 @@ class SchemaEventSubscriber implements EventSubscriber
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         $type = strtolower($row['type']);
-
-        if (!isset($tableColumn['platformoptions'])) {
-            $tableColumn['platformoptions'] = array();
-        }
-
-        $tableColumn['platformoptions']['spatial'] = array(
-            'srid'      => (int) $row['srid'],
-            'dimension' => (int) $row['coord_dimension'],
-            'index'     => false
-        );
-
-        foreach ($indexes as $index) {
-            $indexName = $index->getName();
-
-            if (0 === stripos($indexName, 'spatialidx')) {
-                if ($index->getColumns() === array($tableColumn['field'])) {
-                    $tableColumn['platformoptions']['spatial']['index'] = true;
-                }
-            }
-        }
 
         $options = array(
             'length'          => null,
@@ -315,13 +288,22 @@ class SchemaEventSubscriber implements EventSubscriber
             'fixed'           => null,
             'unsigned'        => false,
             'autoincrement'   => false,
-            'comment'         => $tableColumn['comment'],
-            'platformOptions' => $tableColumn['platformoptions']
+            'comment'         => $tableColumn['comment']
         );
+        
+        $column = new Column($tableColumn['field'], Type::getType($type), $options);
+
+        $spatial = array(
+            'srid'      => (int) $row['srid'],
+            'dimension' => (int) $row['coord_dimension'],
+            'index'     => $indexExists
+        );
+
+        $column->setCustomSchemaOption('spatial', $spatial);
 
         $args
             ->preventDefault()
-            ->setColumn(new Column($tableColumn['field'], Type::getType($type), $options));
+            ->setColumn($column);
     }
 
     /**
@@ -360,8 +342,8 @@ class SchemaEventSubscriber implements EventSubscriber
             'index'     => true
         );
 
-        if ($column->hasPlatformOption('spatial')) {
-            $spatial = array_merge($spatial, $column->getPlatformOption('spatial'));
+        if ($column->hasCustomSchemaOption('spatial')) {
+            $spatial = array_merge($spatial, $column->getCustomSchemaOption('spatial'));
         }
 
         // Geometry columns are created by AddGeometryColumn stored procedure
@@ -376,9 +358,7 @@ class SchemaEventSubscriber implements EventSubscriber
 
         if ($spatial['index']) {
             // Add a spatial index to the field
-            $indexName = $this->generateIndexName(
-                array($tableName, $columnName), "spatialidx"
-            );
+            $indexName = $this->generateIndexName($tableName, $columnName);
 
             $query[] = sprintf(
                 "CREATE INDEX %s ON %s USING GIST (%s)",
@@ -433,12 +413,11 @@ class SchemaEventSubscriber implements EventSubscriber
      * @param  array $columnNames
      * @return string
      */
-    protected function generateIndexName($columnNames)
+    protected function generateIndexName($table, $column)
     {
-        $hash = implode('', array_map(function($column) {
-            return preg_replace('/[^a-zA-Z0-9_]+/', '', $column);
-        }, (array) $columnNames));
+        $table  = preg_replace('/[^a-zA-Z0-9_]+/', '', $table);
+        $column = preg_replace('/[^a-zA-Z0-9_]+/', '', $column);
 
-        return substr(strtoupper('SPATIALIDX_' . $hash), 0, 30);
+        return substr(strtolower('SPATIALIDX_' . $table . $column), 0, 30);
     }
 }
