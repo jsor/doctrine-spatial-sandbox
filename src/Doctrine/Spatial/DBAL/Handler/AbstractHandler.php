@@ -23,7 +23,7 @@ use Doctrine\DBAL\Event\SchemaAlterTableRenameColumnEventArgs;
 /**
  * @author Jan Sorgalla <jsorgalla@googlemail.com>
  */
-abstract class AbstractHandler
+abstract class AbstractHandler implements HandlerInterface
 {
     /**
      * @param \Doctrine\ORM\Tools\Event\SchemaCreateTableColumnEventArgs $args
