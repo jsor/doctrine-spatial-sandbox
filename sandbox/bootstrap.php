@@ -40,6 +40,11 @@ $connectionOptions = array(
     'user' => 'root',
     'password' => 'local',
     'host' => 'localhost',
+    'driverOptions' => array(
+        'userDefinedExtensions' => array(
+            'libspatialite.so'
+        )
+    )
 );
 
 $em = \Doctrine\ORM\EntityManager::create($connectionOptions, $config);
