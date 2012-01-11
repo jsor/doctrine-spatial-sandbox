@@ -2,7 +2,7 @@
     "name": "doctrine/spatial",
     "type": "library",
     "authors": [
-        {"name": "Jan Sorgalla", "email": "jan@googlemail.com"}
+        {"name": "Jan Sorgalla", "email": "jsorgalla@googlemail.com"}
     ],
     "repositories": {
         "github.com/jsor/dbal": {
