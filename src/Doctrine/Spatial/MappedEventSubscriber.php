@@ -42,8 +42,8 @@ class MappedEventSubscriber extends GedmoMappedEventSubscriber
      */
     public function loadClassMetadata(EventArgs $args)
     {
-        $ea = $this->getEventAdapter($eventArgs);
-        $this->loadMetadataForObjectClass($ea->getObjectManager(), $eventArgs->getClassMetadata());
+        $ea = $this->getEventAdapter($args);
+        $this->loadMetadataForObjectClass($ea->getObjectManager(), $args->getClassMetadata());
     }
     
     /**
