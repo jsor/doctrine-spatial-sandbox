@@ -11,32 +11,74 @@
 
 namespace Doctrine\Spatial\DBAL\Handler;
 
+use Doctrine\DBAL\Schema\Column;
+
 /**
  * @author Jan Sorgalla <jsorgalla@googlemail.com>
  */
 class SqliteHandler extends PostgreSqlHandler
 {
     /**
-     * @param \Doctrine\ORM\Tools\Event\SchemaDropTableEventArgs $args
+     * @param string $tableName
+     * @param string $columnName
+     * @param \Doctrine\DBAL\Schema\Column $column
+     * @return array
      */
-    public function onSchemaCreateTable(SchemaDropTableEventArgs $args)
+    protected function getAddColumnSQL($tableName, $columnName, Column $column)
     {
-        $table = $args->getTable();
+        $query = array();
 
-        if ($table instanceof Table) {
-            foreach ($table->getColumns() as $column) {
-                if (!$column->getType() instanceof \Doctrine\Spatial\DBAL\Types\Type) {
-                    continue;
-                }
-
-                $args
-                    ->preventDefault()
-                    ->setSql("SELECT DropGeometryTable('" . $table->getQuotedName($args->getPlatform()) . "')");
-                break;
+        $spatial = array(
+            'srid'      => 4326,
+            'dimension' => 2,
+            'index'     => true
+        );
+        
+        foreach ($spatial as $key => &$val) {
+            if ($column->hasCustomSchemaOption('spatial_' . $key)) {
+                $val = $column->getCustomSchemaOption('spatial_' . $key);
             }
-        } else {
-            // We should check here if the table contains geometry columns but we
-            // don't have a connection availabe to query the geometry_columns table.
         }
+
+        // Geometry columns are created by AddGeometryColumn stored procedure
+        $query[] = sprintf(
+            "SELECT AddGeometryColumn('%s', '%s', %d, '%s', %d)",
+            $tableName,
+            $columnName,
+            $spatial['srid'],
+            strtoupper($column->getType()->getName()),
+            $spatial['dimension']
+        );
+
+        if ($spatial['index']) {
+            // Add a spatial index to the field
+            $query[] = sprintf(
+                "Select CreateSpatialIndex('%s', '%s')",
+                $tableName,
+                $columnName
+            );
+        }
+
+        return $query;
+    }
+
+    /**
+     * @param string $tableName
+     * @param string $columnName
+     * @param boolean $notnull
+     * @return array 
+     */
+    protected function getDropColumnSQL($tableName, $columnName, $notnull)
+    {
+        $query = array();
+
+        // We use DropGeometryColumn() to also drop entries from the geometry_columns table
+        $query[] = sprintf(
+            "SELECT DiscardGeometryColumn('%s', '%s')",
+            $tableName, // Table name
+            $columnName // Column name
+        );
+
+        return $query;
     }
 }
