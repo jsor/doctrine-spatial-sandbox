@@ -20,7 +20,7 @@ use Doctrine\Common\Annotations\Annotation;
 final class Column extends Annotation
 {
     /** @var integer */
-    public $srid = -1;
+    public $srid = 4326;
     /** @var integer */
     public $dimension = 2;
     /** @var boolean */

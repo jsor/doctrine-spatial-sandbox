@@ -265,7 +265,7 @@ class PostgreSqlHandler extends AbstractHandler
         $query = array();
 
         $spatial = array(
-            'srid'      => -1,
+            'srid'      => 4326,
             'dimension' => 2,
             'index'     => true
         );

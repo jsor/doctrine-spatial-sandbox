@@ -136,7 +136,7 @@ class MySqlHandler extends AbstractHandler
         $column = new Column($tableColumn['field'], Type::getType($tableColumn['type']), $options);
 
         $column
-            ->setCustomSchemaOption('spatial_srid',      -1)
+            ->setCustomSchemaOption('spatial_srid',      4326)
             ->setCustomSchemaOption('spatial_dimension', 2)
             ->setCustomSchemaOption('spatial_index',     $indexExists);
 
