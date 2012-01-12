@@ -4,27 +4,15 @@
     "authors": [
         {"name": "Jan Sorgalla", "email": "jsorgalla@googlemail.com"}
     ],
-    "repositories": {
-        "github.com/jsor/dbal": {
-            "package": {
-                "name": "jsor/dbal",
-                "source": {
-                    "url": "https://github.com/jsor/dbal.git",
-                    "type": "git",
-                    "reference": "origin/schema_events"
-                }
-            }
-        }
-    },
     "require": {
         "php": ">=5.3.2",
-        "ext-pdo": "*",
-        "symfony/console": "2.1.0-dev",
-        "symfony/class-loader": "2.1.0-dev",
+
+        "symfony/symfony": "2.1.0-dev",
         "doctrine/common": "master-dev",
+        "doctrine/dbal": "master-dev",
         "doctrine/orm": "master-dev",
         "gedmo/doctrine-extensions": "master-dev",
-        "jsor/dbal": "*"
+        "jsor/dbal-sqlite3": "master-dev"
     },
     "autoload": {
         "psr-0": { "Doctrine\\Spatial": "src/" }

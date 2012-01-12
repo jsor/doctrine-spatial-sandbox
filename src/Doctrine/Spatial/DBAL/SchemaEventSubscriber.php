@@ -32,7 +32,8 @@ class SchemaEventSubscriber implements EventSubscriber
 {
     protected $handlerClasses = array(
         'postgresql' => '\Doctrine\Spatial\DBAL\Handler\PostgreSqlHandler',
-        'mysql'      => '\Doctrine\Spatial\DBAL\Handler\MySqlHandler'
+        'mysql'      => '\Doctrine\Spatial\DBAL\Handler\MySqlHandler',
+        'sqlite'     => '\Doctrine\Spatial\DBAL\Handler\SqliteHandler'
     );
 
     /**
