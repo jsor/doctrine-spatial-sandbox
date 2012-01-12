@@ -42,7 +42,7 @@ $connectionOptions = array(
     'host' => 'localhost',
     'driverOptions' => array(
         'userDefinedExtensions' => array(
-            'libspatialite.so'
+            substr(PHP_OS, 0, 3) == 'WIN' ? 'libspatialite-1.dll' : 'libspatialite.so'
         )
     )
 );
