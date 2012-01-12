@@ -22,6 +22,8 @@ $cli->addCommands(array(
     new \Doctrine\DBAL\Tools\Console\Command\RunSqlCommand(),
     new \Doctrine\DBAL\Tools\Console\Command\ImportCommand(),
 
+    new \Doctrine\Spatial\DBAL\Command\InitSpatialiteDatabaseCommand(),
+
     // ORM Commands
     new \Doctrine\ORM\Tools\Console\Command\ClearCache\MetadataCommand(),
     new \Doctrine\ORM\Tools\Console\Command\ClearCache\ResultCommand(),
