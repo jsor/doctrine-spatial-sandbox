@@ -11,7 +11,6 @@
         "doctrine/common": "master-dev",
         "doctrine/dbal": "master-dev",
         "doctrine/orm": "master-dev",
-        "gedmo/doctrine-extensions": "master-dev",
         "jsor/dbal-sqlite3": "master-dev"
     },
     "autoload": {

@@ -1,11 +1,5 @@
 <?php
 
-/*if (file_exists($file = __DIR__.'/../autoload.php')) {
-    require_once $file;
-} elseif (file_exists($file = __DIR__.'/../autoload.php.dist')) {
-    require_once $file;
-}*/
-
 $loader = require __DIR__.'/../vendor/.composer/autoload.php';
 \Doctrine\Common\Annotations\AnnotationRegistry::registerLoader(function($class) use ($loader) {
     $loader->loadClass($class);
@@ -34,8 +28,8 @@ $config->setProxyNamespace('Proxies');
 
 $connectionOptions = array(
     'driver' => 'pdo_pgsql',
-    'driver' => 'pdo_mysql',
-    'driverClass' => 'Jsor\DBAL\Driver\Sqlite3\Driver',
+    //'driver' => 'pdo_mysql',
+    //'driverClass' => 'Jsor\DBAL\Driver\Sqlite3\Driver',
     'dbname' => 'doctrine_spatial',
     'user' => 'root',
     'password' => 'local',
@@ -68,7 +62,6 @@ $conn->getDatabasePlatform()->registerDoctrineTypeMapping('multilinestring',    
 $conn->getDatabasePlatform()->registerDoctrineTypeMapping('multipolygon',       'multipolygon');
 $conn->getDatabasePlatform()->registerDoctrineTypeMapping('geometrycollection', 'geometrycollection');
 
-$mappedSubscriber = new \Doctrine\Spatial\MappedEventSubscriber();
-$schemaSubscriber = new \Doctrine\Spatial\ORM\SchemaEventSubscriber($mappedSubscriber);
+$schemaSubscriber = new \Doctrine\Spatial\ORM\SchemaEventSubscriber();
 
 $conn->getEventManager()->addEventSubscriber($schemaSubscriber);

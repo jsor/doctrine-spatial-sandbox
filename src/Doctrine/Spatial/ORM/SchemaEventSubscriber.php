@@ -25,24 +25,6 @@ use Doctrine\ORM\Tools\Event\GenerateSchemaTableEventArgs;
 class SchemaEventSubscriber extends DBALSchemaEventSubscriber
 {
     /**
-     * @var \Doctrine\Spatial\MappedEventSubscriber 
-     */
-    protected $mappedSubscriber;
-    
-    /**
-     * @var array
-     */
-    protected $tableClassMap = array();
-
-    /**
-     * @param \Doctrine\Spatial\MappedEventSubscriber $mappedSubscriber 
-     */
-    public function __construct(MappedEventSubscriber $mappedSubscriber)
-    {
-        $this->mappedSubscriber = $mappedSubscriber;
-    }
-
-    /**
      * {@inheritDoc}
      */
     public function getSubscribedEvents()
@@ -50,8 +32,7 @@ class SchemaEventSubscriber extends DBALSchemaEventSubscriber
         return array_merge(
             parent::getSubscribedEvents(),
             array(
-                ToolEvents::postGenerateSchemaTable,
-                ToolEvents::postGenerateSchema
+                ToolEvents::postGenerateSchemaTable
             )
         );
     }
@@ -61,53 +42,21 @@ class SchemaEventSubscriber extends DBALSchemaEventSubscriber
      */
     public function postGenerateSchemaTable(GenerateSchemaTableEventArgs $args)
     {
-        $meta = $args->getClassMetadata();
-        $this->tableClassMap[$args->getClassTable()->getName()] = $meta->name;
-    }
-
-    /**
-     * @param \Doctrine\ORM\Tools\Event\GenerateSchemaEventArgs $args
-     */
-    public function postGenerateSchema(GenerateSchemaEventArgs $args)
-    {
-        $schema = $args->getSchema();
-
-        foreach ($schema->getTables() as $table) {
-            $tableName = $table->getName();
-
-            if (!isset($this->tableClassMap[$tableName])) {
+        foreach ($args->getClassTable()->getColumns() as $column) {
+            if (!$column->getType() instanceof \Doctrine\Spatial\DBAL\Types\Type) {
                 continue;
             }
 
-            $config = $this->mappedSubscriber->getClassConfigurationFromEventArgs($args, $this->tableClassMap[$tableName]);
-
-            if (!$config) {
-                continue;
+            if (!$column->hasCustomSchemaOption('spatial_srid')) {
+                $column->setCustomSchemaOption('spatial_srid', 4326);
             }
-
-            foreach ($table->getColumns() as $column) {
-                if (!$column->getType() instanceof \Doctrine\Spatial\DBAL\Types\Type) {
-                    continue;
-                }
-
-                $columnName = $column->getName();
-                
-                $mapping = new \Doctrine\Spatial\Mapping\Annotation\Column(array());
-
-                $spatial = array(
-                    'srid'      => $mapping->srid,
-                    'dimension' => $mapping->dimension,
-                    'index'     => $mapping->index
-                );
-
-                if (isset($config['spatial']['column'][$columnName])) {
-                    $spatial = array_merge($spatial, $config['spatial']['column'][$columnName]);
-                }
-
-                $table->getColumn($columnName)
-                    ->setCustomSchemaOption('spatial_srid',      (int)  $spatial['srid'])
-                    ->setCustomSchemaOption('spatial_dimension', (int)  $spatial['dimension'])
-                    ->setCustomSchemaOption('spatial_index',     (bool) $spatial['index']);
+            
+            if (!$column->hasCustomSchemaOption('spatial_dimension')) {
+                $column->setCustomSchemaOption('spatial_dimension', 2);
+            }
+            
+            if (!$column->hasCustomSchemaOption('spatial_index')) {
+                $column->setCustomSchemaOption('spatial_index', false);
             }
         }
     }

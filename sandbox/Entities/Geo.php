@@ -3,7 +3,6 @@
 namespace Entities;
 
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Spatial\Mapping\Annotation as Spatial;
 
 /**
  * @ORM\Entity
@@ -19,8 +18,7 @@ class Geo
     private $id;
 
     /**
-     * @ORM\Column(type="point", nullable=true)
-     * @Spatial\Column(srid=4326, dimension=2, index=true)
+     * @ORM\Column(type="point", nullable=true, options={"spatial_srid"=4326, "spatial_dimension"=2, "spatial_index"=true})
      */
     private $point;
 

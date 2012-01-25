@@ -267,9 +267,9 @@ class PostgreSqlHandler extends AbstractHandler
         $spatial = array(
             'srid'      => 4326,
             'dimension' => 2,
-            'index'     => true
+            'index'     => false
         );
-        
+
         foreach ($spatial as $key => &$val) {
             if ($column->hasCustomSchemaOption('spatial_' . $key)) {
                 $val = $column->getCustomSchemaOption('spatial_' . $key);

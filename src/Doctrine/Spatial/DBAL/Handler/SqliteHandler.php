@@ -31,7 +31,7 @@ class SqliteHandler extends PostgreSqlHandler
         $spatial = array(
             'srid'      => 4326,
             'dimension' => 2,
-            'index'     => true
+            'index'     => false
         );
         
         foreach ($spatial as $key => &$val) {
