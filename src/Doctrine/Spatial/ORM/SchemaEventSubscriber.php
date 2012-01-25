@@ -14,7 +14,6 @@ namespace Doctrine\Spatial\ORM;
 use Doctrine\Spatial\DBAL\SchemaEventSubscriber as DBALSchemaEventSubscriber;
 use Doctrine\Spatial\MappedEventSubscriber;
 use Doctrine\ORM\Tools\ToolEvents;
-use Doctrine\ORM\Tools\Event\GenerateSchemaEventArgs;
 use Doctrine\ORM\Tools\Event\GenerateSchemaTableEventArgs;
 
 /**
