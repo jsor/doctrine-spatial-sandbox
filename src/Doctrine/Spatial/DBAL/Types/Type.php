@@ -41,7 +41,7 @@ abstract class Type extends BaseType
     /**
      * {@inheritDoc}
      */
-    public function convertToPHPValueSQL($sqlExpr, AbstractPlatform $platform)
+    public function convertToPHPValueSQL($sqlExpr, $platform)
     {
         return sprintf('AsText(%s)', $sqlExpr);
     }
