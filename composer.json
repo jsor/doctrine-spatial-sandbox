@@ -1,5 +1,4 @@
 {
-    "name": "doctrine/spatial",
     "type": "library",
     "authors": [
         {"name": "Jan Sorgalla", "email": "jsorgalla@googlemail.com"}
