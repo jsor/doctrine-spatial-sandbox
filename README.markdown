@@ -1,15 +1,11 @@
-Doctrine Spatial Extension
-==========================
+Doctrine Spatial Sandbox
+========================
 
-Installation
-------------
+This has been a playground while developing some features for Doctrine to enable spatial data support.
 
-Doctrine\Spatial can be installed using the [Composer](http://packagist.org/) tool. You can either add `doctrine/spatial` to your package dependencies, or if you want to install Doctrine\Spatial as standalone, go to the main directory of this package and run:
-
-    $ wget http://getcomposer.org/composer.phar
-    $ php composer.phar install
+See __https://github.com/jsor/doctrine-postgis__ for a full featured PostGIS extension for Doctrine.
 
 License
 -------
 
-The Doctrine Spatial Extension is released under the [MIT License](https://github.com/jsor/doctrine-spatial/blob/master/LICENSE).
+[MIT](https://github.com/jsor/doctrine-spatial/blob/master/LICENSE)
